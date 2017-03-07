@@ -1,0 +1,27 @@
+## Here you hae to configure the base url to the rest api of
+## you confluence
+# base_url: https://confluence.mydomain.com/rest/api/content
+#
+## pages covers an array of confluence pages
+##   the page_id: may you find in the url if you click on "page info" in confluence
+##   max_age: days
+##   email: could be a string or an array with all the addresses you will be notify
+##          if the page is out dated
+# pages:
+#     -
+#         page_id: 23201340
+#         max_age: 31
+#         email: [user@mydomain.com]
+
+base_url: https://confluence.mydomain.com/rest/api/content
+pages:
+    -
+        # (1) User permission review
+        page_id: 815
+        max_age: 31
+        email: admin@mydomain.com
+    -  
+        # (2) CleanUp of public folder on fileserver
+        page_id: 816
+        max_age: 7
+        email: [office@mydomain.com, operations@mydomain.com]
