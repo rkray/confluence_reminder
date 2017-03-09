@@ -124,7 +124,7 @@ class ConfluenceReminder():
         text_template = [
             "Hello!",
             "The confluence page \"{title}\" is outdated.",
-            "Last change was at {last_change}.",
+            "Last change was on {last_change}.",
             "Please go to <{webui}> and update the page."
         ]
         text=("\n".join(text_template)).format(
@@ -139,8 +139,8 @@ class ConfluenceReminder():
             "  <body>",
             "    <h1>Hello!</h1>",
             "    <p>The confluence page \"{title}\" is outdated.</p>",
-            "    <p>Last change was at {last_change}.</p>",
-            "    <p>Please go to the <a href='{webui}'>link</a> and update the page.</p>",
+            "    <p>Last change was on {last_change}.</p>",
+            "    <p>Please follow the <a href='{webui}'>link</a> and update the page.</p>",
             "  </body>",
             "</html>"
         ]
