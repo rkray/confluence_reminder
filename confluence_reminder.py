@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # author: René Kray <rene@kray.info>
 # date: 2017-03-5
+#
+# check the gt repo on githup.com for the latest ersion
+# https://github.com/rkray/confluence_reminder
+#
 # purpose: send reminder emails if confluece pages are out dated
 
 import os
@@ -33,10 +37,10 @@ class ConfluencePage():
         data=dict(json.loads(r.text))
 
         # setup the propperties
-        self.title       = data['title']
-        self.version     = data['version']['number']
-        self.reviser     = data['version']['by']['displayName']
-        self.webui       = data['_links']['base']+data['_links']['webui']
+        self.title   = data['title']
+        self.version = data['version']['number']
+        self.reviser = data['version']['by']['displayName']
+        self.webui   = data['_links']['base']+data['_links']['webui']
 
         last_change = data['version']['when']
         # Confluence Date Format: '2016-09-30T15:06:29.902+02:00'
@@ -140,7 +144,12 @@ class ConfluenceReminder():
             "  </body>",
             "</html>"
         ]
-        html="\n".join(html_template)
+        html=("\n".join(html_template)).format(
+            title=cpage.title,
+            last_change=cpage.last_change,
+            webui=cpage.webui
+        )
+
 
         # Attach parts into message container.
         # According to RFC 2046, the last part of a multipart message, in this case
@@ -154,7 +163,6 @@ class ConfluenceReminder():
         # and message to send - here it is sent as one string.
         s.sendmail(sender, recipient, msg.as_string())
         s.quit()
-
 
     # evaluate commandline arguments and switches
     def get_arguments(self):
