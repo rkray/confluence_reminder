@@ -7,11 +7,17 @@ import os
 from   pprint   import pprint
 from   optparse import OptionParser 
 from   datetime import datetime,date
+import smtplib
+from   email.mime.multipart import MIMEMultipart
+from   email.mime.text      import MIMEText
 import json
 import sys        # for eprint needed
 import yaml       # sudo apt install python3-yaml
 import requests   # sudo apt-get install python3-requests
 
+# to get the body of a confluence page you have to add
+# ?expand=body.storage to the URL
+# The body of the page can you find in data["body"]["storage"]["value"]
 
 # little helper function to write error messages to stderr
 # usage is similar to the normal print function
@@ -72,27 +78,83 @@ class ConfluenceReminder():
 
         self.conf.update(config)
 
-        if (self.conf['verbose'] == False):
+        if (self.conf['verbose'] == True):
             pprint(self.conf)
 
         pages=self.conf['pages']
 
         for page in pages:
-            cp=ConfluencePage(self.conf['base_url'], int(page['page_id']))
-            page_age=(date.today()-cp.last_change.date()).days
-            print(cp.title)
-            print("  Page age: {age} days. Max age is {max_age} days.".format(
-                age=page_age,
-                max_age=page['max_age']
+            cpage=ConfluencePage(self.conf['base_url'], int(page['page_id']))
+            page_age=(date.today()-cpage.last_change.date()).days
+            if (self.conf['verbose'] == True):
+                print(cpage.title)
+                print("  Page age: {age} days. Max age is {max_age} days.".format(
+                    age=page_age,
+                    max_age=page['max_age']
+                    )
                 )
-            )
             if page_age > page['max_age']:
-                print("  This page has to be updated.")
+                self.send_email(cpage,page['email'])
+                if (self.conf['verbose'] == True):
+                    print("  This page has to be updated.")
             else:
-                print("  This page is up to date.")
+                if (self.conf['verbose'] == True):
+                    print("  This page is up to date.")
 
-        # Format String
-        # ('Hi, my name is {name} and my age is {age}\n'.format(name="René", age=45))
+    # This function expect a ConfluecePage object
+    def send_email(self,cpage,recipient):
+        sender         = self.conf["sender"]
+        # Create message container - the correct MIME type is multipart/alternative.
+        msg            = MIMEMultipart('alternative')
+        msg['Subject'] = "Confluence page is outdated: "+cpage.title
+        msg['From']    = sender
+
+        # if there is a list of recipients configured, join them to on string
+        if type(recipient) is list:
+            msg['To'] = ", ".join(recipient)
+        else:
+            msg['To'] = recipient
+
+        # Create the body of the message (a plain-text and an HTML version).
+        # Maybe the tamplates should be moved out of the script.
+        text_template = [
+            "Hello!",
+            "The confluence page \"{title}\" is outdated.",
+            "Last change was at {last_change}.",
+            "Please go to <{webui}> and update the page."
+        ]
+        text=("\n".join(text_template)).format(
+            title=cpage.title,
+            last_change=cpage.last_change,
+            webui=cpage.webui
+        )
+
+        html_template = [
+            "<html>",
+            "  <head></head>",
+            "  <body>",
+            "    <h1>Hello!</h1>",
+            "    <p>The confluence page \"{title}\" is outdated.</p>",
+            "    <p>Last change was at {last_change}.</p>",
+            "    <p>Please go to the <a href='{webui}'>link</a> and update the page.</p>",
+            "  </body>",
+            "</html>"
+        ]
+        html="\n".join(html_template)
+
+        # Attach parts into message container.
+        # According to RFC 2046, the last part of a multipart message, in this case
+        # the HTML message, is best and preferred.
+        msg.attach(MIMEText(text, 'plain'))
+        msg.attach(MIMEText(html, 'html'))
+
+        # Send the message via local SMTP server.
+        s = smtplib.SMTP('localhost')
+        # sendmail function takes 3 arguments: sender's address, recipient's address
+        # and message to send - here it is sent as one string.
+        s.sendmail(sender, recipient, msg.as_string())
+        s.quit()
+
 
     # evaluate commandline arguments and switches
     def get_arguments(self):

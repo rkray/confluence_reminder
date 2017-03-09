@@ -14,6 +14,7 @@
 #         email: [user@mydomain.com]
 
 base_url: https://confluence.mydomain.com/rest/api/content
+sender: cron@mydomain.com
 pages:
     -
         # (1) User permission review
